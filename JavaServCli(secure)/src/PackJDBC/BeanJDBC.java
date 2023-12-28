@@ -38,8 +38,6 @@ public class BeanJDBC  {
                 int id = resultSet.getInt("id");
                 String login = resultSet.getString("login");
                 String mdp = resultSet.getString("mot_de_passe");
-
-
                 // Comparaison du contenu des chaînes
 
                 if (loginP.equals(login)&& passWP.equals(mdp))
@@ -80,8 +78,6 @@ public class BeanJDBC  {
             System.out.println(f.toString());
             System.out.println("test");
         }
-
-
         return userList;
     }
 
