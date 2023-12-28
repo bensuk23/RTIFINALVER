@@ -46,9 +46,6 @@ public class BeanJDBC  {
                 {
                     trouve =1;
                 }
-
-
-
             }
         }
         return trouve;
