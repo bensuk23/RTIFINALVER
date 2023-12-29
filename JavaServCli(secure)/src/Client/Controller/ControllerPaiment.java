@@ -1,38 +1,50 @@
 package Client.Controller;
 
 import Donnee.Article;
+
+import MyCrypto.MyCrypto;
 import Donnee.Facture;
 import Client.GUIEmploye.IntefacePaiment;
-import PackVESPAP.*;
+import PackVESPAPS.*;
+import Serveur.Requete;
 
+import javax.crypto.*;
+import javax.crypto.spec.SecretKeySpec;
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.Socket;
+import java.security.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Vector;
+
+import static MyCrypto.MyCrypto.CryptSymDES;
+import static MyCrypto.MyCrypto.DecryptSymDES;
 
 public class ControllerPaiment {
     private static IntefacePaiment fenetreClient;
+
+    private static SecretKey cleSession;
+
+    private static int idcli;
 
     public static Socket csocket;
     private String login;
     protected ObjectOutputStream oos;
     protected ObjectInputStream ois;
-    public ControllerPaiment(IntefacePaiment frame) throws IOException
-    {
+
+    public ControllerPaiment(IntefacePaiment frame) throws IOException {
         this.fenetreClient = frame;
 
         fenetreClient.setTitle("Mon Interface Graphique");
-        fenetreClient.setSize(1000,500);
+        fenetreClient.setSize(1000, 500);
         connexionserv();
         LOGOUTOK();
         oos = new ObjectOutputStream(csocket.getOutputStream());
@@ -54,53 +66,59 @@ public class ControllerPaiment {
         });
 
 
-
         fenetreClient.getButtonLogin().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 System.out.println("LOGIN.");
 
-                if (fenetreClient.getTextLogin().getText().isEmpty() )
-                {
+                if (fenetreClient.getTextLogin().getText().isEmpty()) {
                     JOptionPane.showMessageDialog(null, "Veuillez entrée un LOGIN ");
                     return;
                 }
-                if (fenetreClient.getTextPassword().getText().isEmpty() )
-                {
+                if (fenetreClient.getTextPassword().getText().isEmpty()) {
                     JOptionPane.showMessageDialog(null, "Veuillez entrée un Mot De Passe ");
                     return;
                 }
-
 
 
                 String login = fenetreClient.getTextLogin().getText();
                 String password = fenetreClient.getTextPassword().getText();
 
 
-                try
-                {
+                try {
 
-                    RequeteLOGIN requete = new RequeteLOGIN(login,password);
+                    RequeteLOGIN requete = new RequeteLOGIN(login, password);
 
                     oos.writeObject(requete);
                     ReponseLOGIN reponse = (ReponseLOGIN) ois.readObject();
-                    if (reponse.isValide())
-                    {
+                    idcli = reponse.getIdcli();
+
+                    if (reponse.isValide()) {
                         JOptionPane.showMessageDialog(null, " Client Connecter ");
+                        byte[] cleSessionDecryptee;
+                        cleSessionDecryptee = MyCrypto.DecryptAsymRSA(RecupereClePriveeClient(),reponse.getData1());
+                        cleSession = new SecretKeySpec(cleSessionDecryptee,"DES");
+                        System.out.println("reception + decryptage asymétrique de la clé de session...");
+
+                        GetFacturesFast(idcli,RecupereClePriveeClient());
+
                         LOGINOK();
-                    }
-                    else
-                    {
+                    } else {
                         JOptionPane.showMessageDialog(null, " Probleme de connexion  ");
                     }
+                } catch (IOException | ClassNotFoundException ex) {
+                    JOptionPane.showMessageDialog(null, "Problème de connexion !", "Erreur...", JOptionPane.ERROR_MESSAGE);
+                } catch (SignatureException ex) {
+                    throw new RuntimeException(ex);
+                } catch (NoSuchAlgorithmException ex) {
+                    throw new RuntimeException(ex);
+                } catch (InvalidKeyException ex) {
+                    throw new RuntimeException(ex);
+                } catch (NoSuchProviderException ex) {
+                    throw new RuntimeException(ex);
                 }
-                catch (IOException | ClassNotFoundException ex)
-                {
-                    JOptionPane.showMessageDialog(null,"Problème de connexion !","Erreur...",JOptionPane.ERROR_MESSAGE);
-                }
+
             }
-
-
 
 
 
@@ -116,83 +134,6 @@ public class ControllerPaiment {
 
         });
 
-        fenetreClient.getSelectionButton().addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-
-                if (fenetreClient.getTextClinum().getText().isEmpty() )
-                {
-                    JOptionPane.showMessageDialog(null, "Veuillez entrée un Numero de Client ");
-                    return;
-                }
-
-                int idcli = Integer.parseInt(fenetreClient.getTextClinum().getText());
-
-
-                RequeteGetFactures requete = new RequeteGetFactures(idcli);
-
-                try {
-                    oos.writeObject(requete);
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
-                try {
-                    ReponseGetFactures reponse = (ReponseGetFactures) ois.readObject();
-
-                    if (reponse.getFacList().isEmpty())
-                    {
-                        JOptionPane.showMessageDialog(null, "Pas de facture pour ce client");
-                        return;
-                    }
-
-                    DefaultTableModel model = (DefaultTableModel) fenetreClient.getTableFacture().getModel();
-                    int taille = fenetreClient.getTableFacture().getRowCount();
-
-                    for (int i=0;i<taille;i++)
-                    {
-                        model.removeRow(0);
-                        System.out.println("Remove pass = " );
-                    }
-
-                    DefaultTableModel model1 = (DefaultTableModel) fenetreClient.getTableArticles().getModel();
-                    int taille2 = fenetreClient.getTableArticles().getRowCount();
-
-                    for (int i=0;i<taille2;i++)
-                    {
-                        model1.removeRow(0);
-                        System.out.println("Remove pass = " );
-                    }
-
-
-
-
-
-
-
-
-                    for (Facture f : reponse.getFacList())
-                    {
-
-
-                        Vector ligne = new Vector();
-
-                        ligne.add(f.getId());
-                        ligne.add(f.getIdClient());
-                        ligne.add(f.getDate());
-                        ligne.add(f.getMontant());
-                        ligne.add(f.isPaye());
-
-                        model.addRow(ligne);
-                    }
-
-                } catch (IOException ex ) {
-                    throw new RuntimeException(ex);
-                } catch (ClassNotFoundException ex) {
-                    throw new RuntimeException(ex);
-                }
-            }
-
-        });
 
         fenetreClient.getPaiementButton().addActionListener(new ActionListener() {
             @Override
@@ -201,23 +142,20 @@ public class ControllerPaiment {
                 int idf = 0;
                 boolean test = false;
 
-                if (fenetreClient.getTextnomcarte().getText().isEmpty() )
-                {
+                if (fenetreClient.getTextnomcarte().getText().isEmpty()) {
                     JOptionPane.showMessageDialog(null, "Veuillez entrée un nom ");
                     return;
                 }
 
                 int ligneSelectionnee = fenetreClient.getTableFacture().getSelectedRow();
-                if (ligneSelectionnee != -1)
-                {
+                if (ligneSelectionnee != -1) {
                     DefaultTableModel model = (DefaultTableModel) fenetreClient.getTableFacture().getModel();
                     // Récupérer les valeurs des colonnes de la ligne sélectionnée
                     idf = Integer.parseInt(String.valueOf(model.getValueAt(ligneSelectionnee, 0)));
                     test = Boolean.parseBoolean(String.valueOf(model.getValueAt(ligneSelectionnee, 4)));
                     System.out.println("Colonne 1 : " + idf);
 
-                    if (test == true)
-                    {
+                    if (test == true) {
                         JOptionPane.showMessageDialog(null, "Facture Déja payé ");
                         return;
                     }
@@ -228,40 +166,45 @@ public class ControllerPaiment {
                 String nomC = fenetreClient.getTextnomcarte().getText();
                 String numcarte = fenetreClient.getTextnumcarte().getText();
 
-                if (numcarte.length() < 16 || numcarte.length() > 22)
-                {
+                if (numcarte.length() < 16 || numcarte.length() > 22) {
                     JOptionPane.showMessageDialog(null, " Code visa ne contient pas assez ou trop de caractère (entre 16 et 22) ");
                     return;
                 }
+                try {
+                    byte[] bytes = CryptSymDES(cleSession,convertToBytes(idf,nomC,numcarte));
 
 
 
 
-                try
-                {
 
-                    RequetePayFacture requete = new RequetePayFacture(idf,nomC,numcarte);
+                    RequetePayFacture requete = new RequetePayFacture(bytes);
 
                     oos.writeObject(requete);
                     ReponsePayFacture reponse = (ReponsePayFacture) ois.readObject();
-                    if (reponse.isValide())
-                    {
-                        JOptionPane.showMessageDialog(null, " Facture Payé et table facture mise a jour  ");
-                        fenetreClient.getSelectionButton().doClick();
-                    }
-                    else
-                    {
+                    if (reponse.isValide()) {
+                        if (reponse.VerifyAuthenticity(cleSession))
+                        {
+                            System.out.println("Authentification validée !");
+                            JOptionPane.showMessageDialog(null, " Facture Payé et table facture mise a jour  ");
+                            GetFacturesFast(idcli,RecupereClePriveeClient());
+                        }
+                        else System.out.println("Authentification échouée...");
+                    } else {
                         JOptionPane.showMessageDialog(null, " Probleme de carte visa ");
                     }
-                }
-                catch (IOException | ClassNotFoundException ex)
-                {
-                    JOptionPane.showMessageDialog(null,"Problème de connexion !","Erreur...",JOptionPane.ERROR_MESSAGE);
+                } catch (IOException | ClassNotFoundException ex) {
+                    JOptionPane.showMessageDialog(null, "Problème de connexion !", "Erreur...", JOptionPane.ERROR_MESSAGE);
+                } catch (SignatureException ex) {
+                    throw new RuntimeException(ex);
+                } catch (NoSuchAlgorithmException ex) {
+                    throw new RuntimeException(ex);
+                } catch (InvalidKeyException ex) {
+                    throw new RuntimeException(ex);
+                } catch (NoSuchProviderException ex) {
+                    throw new RuntimeException(ex);
+
                 }
             }
-
-
-
 
 
         });
@@ -272,9 +215,11 @@ public class ControllerPaiment {
             public void actionPerformed(ActionEvent e) {
                 System.out.println("Afficher.");
                 int idf = 0;
+
+                byte[] listArtBDCrypte = new byte[0];
+                List<Article> listarticles = new ArrayList<>();
                 int ligneSelectionnee = fenetreClient.getTableFacture().getSelectedRow();
-                if (ligneSelectionnee != -1)
-                {
+                if (ligneSelectionnee != -1) {
                     DefaultTableModel model = (DefaultTableModel) fenetreClient.getTableFacture().getModel();
                     // Récupérer les valeurs des colonnes de la ligne sélectionnée
                     idf = Integer.parseInt(String.valueOf(model.getValueAt(ligneSelectionnee, 0)));
@@ -284,11 +229,9 @@ public class ControllerPaiment {
                 }
 
 
+                try {
 
-                try
-                {
-
-                    RequeteGetFacture requete = new RequeteGetFacture(idf);
+                    RequeteGetFacture requete = new RequeteGetFacture(idf,RecupereClePriveeClient());
 
                     oos.writeObject(requete);
 
@@ -297,21 +240,18 @@ public class ControllerPaiment {
                     DefaultTableModel model = (DefaultTableModel) fenetreClient.getTableArticles().getModel();
                     int taille = fenetreClient.getTableArticles().getRowCount();
 
-                    for (int i=0;i<taille;i++)
-                    {
+                    for (int i = 0; i < taille; i++) {
                         model.removeRow(0);
-                        System.out.println("Remove pass = " );
                     }
 
 
-
-
-
                     float stock = 0.0f;
+                    listArtBDCrypte = reponse.getData2();
+                    listarticles = convertBytesToListA(DecryptSymDES(cleSession,listArtBDCrypte));
 
 
-                    for (Article a : reponse.getartList())
-                    {
+
+                    for (Article a : listarticles) {
                         Vector ligne = new Vector();
 
                         ligne.add(a.getNom());
@@ -324,9 +264,17 @@ public class ControllerPaiment {
                     fenetreClient.getTextTotal().setText(String.valueOf(stock));
 
 
-                } catch (IOException ex ) {
+                } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 } catch (ClassNotFoundException ex) {
+                    throw new RuntimeException(ex);
+                } catch (SignatureException ex) {
+                    throw new RuntimeException(ex);
+                } catch (NoSuchAlgorithmException ex) {
+                    throw new RuntimeException(ex);
+                } catch (InvalidKeyException ex) {
+                    throw new RuntimeException(ex);
+                } catch (NoSuchProviderException ex) {
                     throw new RuntimeException(ex);
                 }
 
@@ -337,7 +285,7 @@ public class ControllerPaiment {
 
     public static void connexionserv() {
         try {
-            csocket = new Socket("127.0.0.1", 50001);
+            csocket = new Socket("127.0.0.1", 50002);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -359,17 +307,14 @@ public class ControllerPaiment {
         fenetreClient.getTableArticles().setEnabled(true);
         fenetreClient.getTableFacture().setEnabled(true);
         fenetreClient.getTextnomcarte().setEnabled(true);
-        fenetreClient.getTextClinum().setEnabled(true);
         fenetreClient.getTextnumcarte().setEnabled(true);
         fenetreClient.getPaiementButton().setEnabled(true);
-        fenetreClient.getSelectionButton().setEnabled(true);
         fenetreClient.getAfficherButton().setEnabled(true);
         fenetreClient.getTableArticles().setEnabled(true);
         fenetreClient.getTableFacture().setEnabled(true);
         fenetreClient.getTextTotal().setEnabled(true);
 
     }
-
     public static void LOGOUTOK() {
         fenetreClient.getTextLogin().setEnabled(true);
         fenetreClient.getTextPassword().setEnabled(true);
@@ -378,17 +323,179 @@ public class ControllerPaiment {
         fenetreClient.getTableArticles().setEnabled(false);
         fenetreClient.getTableFacture().setEnabled(false);
         fenetreClient.getTextnomcarte().setEnabled(false);
-        fenetreClient.getTextClinum().setEnabled(false);
         fenetreClient.getTextnumcarte().setEnabled(false);
         fenetreClient.getPaiementButton().setEnabled(false);
-        fenetreClient.getSelectionButton().setEnabled(false);
         fenetreClient.getAfficherButton().setEnabled(false);
         fenetreClient.getTableArticles().setEnabled(false);
         fenetreClient.getTableFacture().setEnabled(false);
         fenetreClient.getTextTotal().setEnabled(false);
 
+    }
+
+    public void GetFacturesFast(int clientID,PrivateKey clePriveeClientp) throws SignatureException, IOException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException {
+        System.out.println("GetFactures");
+        byte[] listFacBDCrypte = new byte[0];
+        List<Facture> listarticles = new ArrayList<>();
+
+        RequeteGetFactures requete = new RequeteGetFactures(clientID,clePriveeClientp);
+
+        try {
+            oos.writeObject(requete);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+
+        try {
+            ReponseGetFactures reponse = (ReponseGetFactures) ois.readObject();
+
+            if (reponse.getData2()== null) {
+                JOptionPane.showMessageDialog(null, "Pas de facture pour ce client");
+                return;
+            }
+
+            // Clear table for factures
+            clearTableModel(fenetreClient.getTableFacture().getModel());
+
+            // Clear table for articles
+            clearTableModel(fenetreClient.getTableArticles().getModel());
+
+            DefaultTableModel model = (DefaultTableModel) fenetreClient.getTableFacture().getModel();
+            DefaultTableModel model1 = (DefaultTableModel) fenetreClient.getTableArticles().getModel();
+            listFacBDCrypte = reponse.getData2();
+            listarticles = convertBytesToListF(DecryptSymDES(cleSession,listFacBDCrypte));
+
+
+            for (Facture f : listarticles) {
+                Vector ligne = new Vector();
+
+                ligne.add(f.getId());
+                ligne.add(f.getIdClient());
+                ligne.add(f.getDate());
+                ligne.add(f.getMontant());
+                ligne.add(f.isPaye());
+
+                model.addRow(ligne);
+            }
+
+        } catch (IOException | ClassNotFoundException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    // Function to clear the rows in a DefaultTableModel
+    private void clearTableModel(TableModel model) {
+        int rowCount = model.getRowCount();
+        for (int i = 0; i < rowCount; i++) {
+            ((DefaultTableModel) model).removeRow(0);
+            System.out.println("Remove pass = ");
+        }
+    }
+    public static PublicKey RecupereClePubliqueServeur()
+    {
+
+        try {
+            // Désérialisation de la clé publique
+            ObjectInputStream ois = new ObjectInputStream(new FileInputStream("clePubliqueServeur.ser"));
+            PublicKey cle = (PublicKey) ois.readObject();
+            ois.close();
+            return cle;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
 
     }
 
-}
+    public static PublicKey RecupereClePubliqueClient()
+    {
 
+        try {
+            // Désérialisation de la clé publique
+            ObjectInputStream ois = new ObjectInputStream(new FileInputStream("clePubliqueClient.ser"));
+            PublicKey cle = (PublicKey) ois.readObject();
+            ois.close();
+            return cle;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    public static PrivateKey RecupereClePriveeClient()
+    {
+        // Désérialisation de la clé privée du serveur
+
+        try {
+            ObjectInputStream ois = new ObjectInputStream(new FileInputStream("clePriveeClient.ser"));
+            PrivateKey cle = (PrivateKey) ois.readObject();
+            ois.close();
+            return cle;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+    private static List<Facture> convertBytesToListF(byte[] bytes)
+    {
+        try {
+
+            ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
+            ObjectInputStream ois = new ObjectInputStream(bis);
+
+            System.out.println("Début de la désérialisation");
+            List<Facture> listeDeserialisee = (List<Facture>) ois.readObject();
+            System.out.println("Fin de la désérialisation");
+
+
+            return listeDeserialisee;
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private static List<Article> convertBytesToListA(byte[] bytes)
+    {
+        try {
+
+            ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
+            ObjectInputStream ois = new ObjectInputStream(bis);
+
+            System.out.println("Début de la désérialisation");
+            List<Article> listeDeserialisee = (List<Article>) ois.readObject();
+            System.out.println("Fin de la désérialisation");
+
+
+            return listeDeserialisee;
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private static byte[] convertToBytes(int intValue, String stringValue1, String stringValue2) {
+        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+             DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutputStream)) {
+
+            // Write the fields to the stream
+            dataOutputStream.writeInt(intValue);
+            dataOutputStream.writeUTF(stringValue1);
+            dataOutputStream.writeUTF(stringValue2);
+
+            // Retrieve the byte array
+            return byteArrayOutputStream.toByteArray();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
+
+
+}

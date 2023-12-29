@@ -1,4 +1,4 @@
-package PackVESPAP;
+package PackVESPAPS;
 
 import Serveur.*;
 public class RequeteLOGOUT implements Requete

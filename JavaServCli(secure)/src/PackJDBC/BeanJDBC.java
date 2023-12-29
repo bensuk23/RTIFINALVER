@@ -11,9 +11,9 @@ import Donnee.Vente;
 import java.sql.Date;
 
 import java.sql.Connection;
-        import java.sql.PreparedStatement;
-        import java.sql.ResultSet;
-        import java.sql.SQLException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class BeanJDBC  {
     private DatabaseBean databaseBean;
@@ -24,31 +24,55 @@ public class BeanJDBC  {
     }
 
     // Example method for performing a SELECT operation
-    public int performSelect(String loginP,String passWP) throws SQLException
+    public String performPassFinder(String loginP) throws SQLException
     {
         Connection connection = databaseBean.getConnection();
-        int trouve = 0;
-        String sql = "SELECT * FROM employes ";
+
+        String passW = null;
+        String sql = "SELECT * FROM clients ";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
                 // Process each row of the result set
 
-                int id = resultSet.getInt("id");
+
                 String login = resultSet.getString("login");
                 String mdp = resultSet.getString("mot_de_passe");
                 // Comparaison du contenu des chaînes
 
-                if (loginP.equals(login)&& passWP.equals(mdp))
+                if (loginP.equals(login))
                 {
-                    trouve =1;
+                    return mdp;
                 }
+            }
+        }
+
+        return passW;
+    }
+
+    public int performSelectCID(String loginP) throws SQLException
+    {
+        Connection connection = databaseBean.getConnection();
+        int trouve = 0;
+        String sql = "SELECT * FROM clients ";
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                // Process each row of the result set
+                String login = resultSet.getString("login");
+                if (loginP.equals(login))
+                {
+                    trouve = resultSet.getInt("id");
+                    return trouve ;
+                }
+
+
             }
         }
         return trouve;
     }
-
 
     public List<Facture> performSelectFactureRetList(int idc) throws SQLException {
         Connection connection = databaseBean.getConnection();

@@ -7,7 +7,6 @@ public abstract class ThreadClient extends Thread
 {
     protected Protocole protocole;
     protected Socket Csocket;
-
     private int numero;
     private static int numCourant = 1;
     public ThreadClient(Protocole protocole,Socket csocket) throws IOException
@@ -51,7 +50,7 @@ public abstract class ThreadClient extends Thread
             {
                 if(oos!=null && ex.getReponse() !=null)
                 {
-                    System.out.println("Thread Démmarer attente d'une requette55555555");
+                    System.out.println("Thread Démmarer attente d'une requette");
                     oos.writeObject(ex.getReponse());
                 }
             }
@@ -62,7 +61,7 @@ public abstract class ThreadClient extends Thread
         {
             try
             {
-                System.out.println("Thread Démmarer attente d'une requette444444444444444444");
+                System.out.println("Thread Démmarer attente d'une requette");
                 Csocket.close();
             }
             catch (IOException ex )
