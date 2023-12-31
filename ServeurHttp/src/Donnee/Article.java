@@ -21,6 +21,13 @@ public class Article implements Serializable {
         this.quantite = quantite;
         this.image = image;
     }
+    public Article(int id,String nom, float prix, int quantite) {
+        this.id = id;
+        this.nom = nom;
+        this.prix = prix;
+        this.quantite = quantite;
+
+    }
 
     // Méthodes Getter
     public int getId(){return id;}

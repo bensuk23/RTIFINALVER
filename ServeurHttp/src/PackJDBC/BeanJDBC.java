@@ -73,7 +73,7 @@ public class BeanJDBC  {
 
         return trouve;
     }
-    public List<Article> performSelectFactureRetList(int idc) throws SQLException {
+    public List<Article> performSelectArticlesRetList() throws SQLException {
         Connection connection = databaseBean.getConnection();
 
         String sql = "SELECT * FROM articles";
@@ -107,11 +107,11 @@ public class BeanJDBC  {
     public int performUpdateArticle(Article updatedArticle) throws SQLException {
         Connection connection = databaseBean.getConnection();
         int rowsAffected = 0;
-        System.out.println("coucou2");
+
 
         // Écrivez la requête SQL pour mettre à jour le stock et le prix
         String sql = "UPDATE articles SET prix = ?, stock = ? WHERE id = ?";
-        System.out.println("coucou3");
+
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setFloat(1, updatedArticle.getPrix());
@@ -119,7 +119,7 @@ public class BeanJDBC  {
             preparedStatement.setInt(3, updatedArticle.getId());
 
             rowsAffected = preparedStatement.executeUpdate();
-            System.out.println("coucou4");
+
         }
 
         return rowsAffected;

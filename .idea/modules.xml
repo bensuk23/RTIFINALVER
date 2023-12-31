@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/GUIClientJava/GUIClientJava2.iml" filepath="$PROJECT_DIR$/GUIClientJava/GUIClientJava2.iml" />
       <module fileurl="file://$PROJECT_DIR$/JavaServCli(secure)/JavaServCli(secure).iml" filepath="$PROJECT_DIR$/JavaServCli(secure)/JavaServCli(secure).iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/RTIFINALVER.iml" filepath="$PROJECT_DIR$/.idea/RTIFINALVER.iml" />
       <module fileurl="file://$PROJECT_DIR$/ServeurHttp/ServeurHttp.iml" filepath="$PROJECT_DIR$/ServeurHttp/ServeurHttp.iml" />
