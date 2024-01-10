@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Liste de tâches</title>
+    <link rel="shortcut icon" href="../images/poivron.jpg">
+    <link href="../css/styleTodolist.css" type="text/css" rel="stylesheet">
+</head>
+
+<body>
+
+<h1 class="monTitre">!!! BIENVUNUE AU SITE DU MARAICHER EN LIGNE !!!</h1>
+
+
+<div id="conteneur">
+
+    <div id="bloc1">
+        <div id="conteneurTab">
+            <table id="maTable">
+                <tr>
+                    <td>ID</td>
+                    <td>Article</td>
+                    <td>Prix à l'unité</td>
+                    <td>quantité</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    <div id="bloc2">
+        <div id="conteneurF">
+            <div id="bloc">
+                <h2 class="form-group">Articles Selectionné :</h2>
+
+                <div class="form-group">
+                    <label for="id">Id :</label>
+                    <input type="text" id="id" name="id"><br>
+                </div>
+                <div class="form-group">
+                    <label for="Articles">Articles :</label>
+                    <input type="text" id="Articles" name="Articles"><br>
+                </div>
+                <div class="form-group">
+                    <label for="Prix">Prix à l'unité :</label>
+                    <input type="number" id="Prix" name="Prix"><br>
+                </div>
+                <div class="form-group">
+                    <label for="quantite">Quantité :</label>
+                    <input type="number" id="quantite" name="quantite"><br>
+                </div>
+
+                <input class="form-group" type="submit" id="SubmitBtn" value="Mise à jour">
+            </div>
+            <div class="flex-child" >
+                <img id="img" src="../images/pommes.jpg" alt="Description de l'image">
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../js/app.js"></script>
+</body>
+</html>
