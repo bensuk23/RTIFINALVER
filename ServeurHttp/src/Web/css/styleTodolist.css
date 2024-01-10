@@ -111,3 +111,33 @@ label,input
     color: black;
     font-family: Arial;
 }
+
+#maTable tr.selected {
+    background-color: yellow;
+}
+
+@media only screen and (max-width: 768px) {
+    #conteneur {
+        flex-direction: column; /* Change la direction de la disposition en colonne */
+    }
+
+    #conteneurF {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    label, input {
+        width: 100%; /* Les champs de texte prendront toute la largeur */
+    }
+}
+
+/* Ajoutez ces règles pour les écrans de petite taille (par exemple, smartphones) */
+@media only screen and (max-width: 480px) {
+    #bloc1, #bloc2 {
+        padding: 10px; /* Réduit l'espacement autour des blocs */
+    }
+
+    #maTable td {
+        font-size: 10px; /* Réduit la taille de la police dans le tableau */
+    }
+}

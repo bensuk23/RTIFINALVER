@@ -31,6 +31,7 @@ public class HandlerStock implements HttpHandler
         exchange.getResponseHeaders().add("Access-Control-Allow-Headers","ContentType");
 
         System.out.println("handlers.HandlerStock (methode " + requestMethod + ") = " + requestPath + " --> ");
+        System.out.println("handlers.HandlerStock (methode " + requestMethod + ") = " + requestPath + " --> ");
 
         if ("GET".equals(requestMethod)) {
             try {

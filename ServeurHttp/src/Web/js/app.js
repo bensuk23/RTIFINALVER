@@ -33,7 +33,24 @@ document.addEventListener('DOMContentLoaded', function () {
     maTable.addEventListener('click', function (event) {
         // Vérification si l'élément cliqué est une cellule du tableau
         if (event.target.tagName === 'TD') {
+
+            var selectedRow = event.target.parentNode;
+
+            // Vérifier si la ligne est déjà sélectionnée
+            var isAlreadySelected = selectedRow.classList.contains('selected');
+
+            // Supprimer la classe "selected" de toutes les lignes dans la table
+            var allRows = document.querySelectorAll('#maTable tr');
+            allRows.forEach(function (row) {
+                row.classList.remove('selected');
+            });
+
+            // Ajouter ou supprimer la classe "selected" en fonction de l'état actuel
+            if (!isAlreadySelected) {
+                selectedRow.classList.add('selected');
+            }
             // Récupération des valeurs de la ligne cliquée
+
             var id = event.target.parentNode.cells[0].textContent;
             var articles = event.target.parentNode.cells[1].textContent;
             var prix = event.target.parentNode.cells[2].textContent;

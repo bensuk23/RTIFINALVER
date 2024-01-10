@@ -91,8 +91,11 @@ public class BeanJDBC  {
                 float prix = resultSet.getFloat("prix");
                 int stock = resultSet.getInt("stock");
                 String image = resultSet.getString("image");
+                String imagese = image.replace(" ", "");
+
+
                 // Create a User object and add it to the list
-                Article article = new Article(id,nom, prix, stock,image);
+                Article article = new Article(id,nom, prix, stock,imagese);
                 articleList.add(article);
             }
         }

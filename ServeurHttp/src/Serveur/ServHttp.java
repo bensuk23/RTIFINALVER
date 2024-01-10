@@ -25,7 +25,10 @@ public class ServHttp {
 
         HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
         server.createContext("/api/stock", new HandlerStock());
-        /*server.createContext("/", new HandlerHtml());*/
+        server.createContext("/", new HandlerHtml());
+        server.createContext("/css",new HandlerCss());
+        server.createContext("/js",new HandlerJs());
+        server.createContext("/images",new HandlerImages());
         server.setExecutor(null);
         server.start();
 

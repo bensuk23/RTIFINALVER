@@ -12,6 +12,8 @@ import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.security.*;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -86,7 +88,7 @@ public class VESPAPS implements Protocole
 
 
 
-                    cleSessionCrypte = MyCrypto.CryptAsymRSA(RecupereClePubliqueClient(),cleSession.getEncoded());
+                    cleSessionCrypte = MyCrypto.CryptAsymRSA(RecupereClePubliqueClientKS(),cleSession.getEncoded());
                     System.out.println("Cryptage asymétrique de la clé de session : " + new String(cleSessionCrypte));
                 } else {
                     System.out.println("Erreur lors de la génération de la clé de session.");
@@ -103,6 +105,14 @@ public class VESPAPS implements Protocole
         } catch (SQLException e)
         {
             throw new RuntimeException(e);
+        } catch (CertificateException e) {
+            throw new RuntimeException(e);
+        } catch (KeyStoreException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
         }
     }
     private synchronized void TraiteRequeteLOGOUT(RequeteLOGOUT requete) throws FinConnexionException
@@ -118,7 +128,7 @@ public class VESPAPS implements Protocole
         byte[] listFacBDCrypte = new byte[0];
         try
         {
-            if (requete.VerifySignature(RecupereClePubliqueClient()))
+            if (requete.VerifySignature(RecupereClePubliqueClientKS()))
             {
                 System.out.println("Signature validée !");
                 listFacBD = new ArrayList<>();
@@ -149,6 +159,10 @@ public class VESPAPS implements Protocole
             throw new RuntimeException(e);
         } catch (NoSuchProviderException e) {
             throw new RuntimeException(e);
+        } catch (CertificateException e) {
+            throw new RuntimeException(e);
+        } catch (KeyStoreException e) {
+            throw new RuntimeException(e);
         }
 
 
@@ -164,7 +178,7 @@ public class VESPAPS implements Protocole
 
         try
         {
-            if (requete.VerifySignature(RecupereClePubliqueClient()))
+            if (requete.VerifySignature(RecupereClePubliqueClientKS()))
             {
                 System.out.println("Signature validée !");
                 listartBD = new ArrayList<>();
@@ -194,6 +208,10 @@ public class VESPAPS implements Protocole
         } catch (InvalidKeyException e) {
             throw new RuntimeException(e);
         } catch (NoSuchProviderException e) {
+            throw new RuntimeException(e);
+        } catch (CertificateException e) {
+            throw new RuntimeException(e);
+        } catch (KeyStoreException e) {
             throw new RuntimeException(e);
         }
 
@@ -315,6 +333,16 @@ public class VESPAPS implements Protocole
             throw new RuntimeException(e);
         }
 
+    }
+
+    public static PublicKey RecupereClePubliqueClientKS() throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException {
+        // Récupération de la clé publique de Client dans le keystore de Client
+
+        KeyStore ks = KeyStore.getInstance("JKS");
+        ks.load(new FileInputStream("JavaServCli(secure)\\KeystoreServeur.jks"),"servmdp".toCharArray());
+        X509Certificate certif = (X509Certificate)ks.getCertificate("clientalias");
+        PublicKey cle = certif.getPublicKey();
+        return cle;
     }
 
     public static SecretKey generateSessionKey() {

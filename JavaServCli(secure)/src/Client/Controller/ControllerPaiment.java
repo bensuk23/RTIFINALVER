@@ -20,6 +20,7 @@ import java.awt.event.WindowEvent;
 import java.io.*;
 import java.net.Socket;
 import java.security.*;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -96,11 +97,11 @@ public class ControllerPaiment {
                     if (reponse.isValide()) {
                         JOptionPane.showMessageDialog(null, " Client Connecter ");
                         byte[] cleSessionDecryptee;
-                        cleSessionDecryptee = MyCrypto.DecryptAsymRSA(RecupereClePriveeClient(),reponse.getData1());
+                        cleSessionDecryptee = MyCrypto.DecryptAsymRSA(RecupereClePriveeClientKS(),reponse.getData1());
                         cleSession = new SecretKeySpec(cleSessionDecryptee,"DES");
                         System.out.println("reception + decryptage asymétrique de la clé de session...");
 
-                        GetFacturesFast(idcli,RecupereClePriveeClient());
+                        GetFacturesFast(idcli,RecupereClePriveeClientKS());
 
                         LOGINOK();
                     } else {
@@ -115,6 +116,12 @@ public class ControllerPaiment {
                 } catch (InvalidKeyException ex) {
                     throw new RuntimeException(ex);
                 } catch (NoSuchProviderException ex) {
+                    throw new RuntimeException(ex);
+                } catch (UnrecoverableKeyException ex) {
+                    throw new RuntimeException(ex);
+                } catch (CertificateException ex) {
+                    throw new RuntimeException(ex);
+                } catch (KeyStoreException ex) {
                     throw new RuntimeException(ex);
                 }
 
@@ -186,7 +193,7 @@ public class ControllerPaiment {
                         {
                             System.out.println("Authentification validée !");
                             JOptionPane.showMessageDialog(null, " Facture Payé et table facture mise a jour  ");
-                            GetFacturesFast(idcli,RecupereClePriveeClient());
+                            GetFacturesFast(idcli,RecupereClePriveeClientKS());
                         }
                         else System.out.println("Authentification échouée...");
                     } else {
@@ -203,6 +210,12 @@ public class ControllerPaiment {
                 } catch (NoSuchProviderException ex) {
                     throw new RuntimeException(ex);
 
+                } catch (UnrecoverableKeyException ex) {
+                    throw new RuntimeException(ex);
+                } catch (CertificateException ex) {
+                    throw new RuntimeException(ex);
+                } catch (KeyStoreException ex) {
+                    throw new RuntimeException(ex);
                 }
             }
 
@@ -231,7 +244,7 @@ public class ControllerPaiment {
 
                 try {
 
-                    RequeteGetFacture requete = new RequeteGetFacture(idf,RecupereClePriveeClient());
+                    RequeteGetFacture requete = new RequeteGetFacture(idf,RecupereClePriveeClientKS());
 
                     oos.writeObject(requete);
 
@@ -275,6 +288,12 @@ public class ControllerPaiment {
                 } catch (InvalidKeyException ex) {
                     throw new RuntimeException(ex);
                 } catch (NoSuchProviderException ex) {
+                    throw new RuntimeException(ex);
+                } catch (UnrecoverableKeyException ex) {
+                    throw new RuntimeException(ex);
+                } catch (CertificateException ex) {
+                    throw new RuntimeException(ex);
+                } catch (KeyStoreException ex) {
                     throw new RuntimeException(ex);
                 }
 
@@ -439,6 +458,14 @@ public class ControllerPaiment {
             throw new RuntimeException(e);
         }
 
+    }
+
+    public static PrivateKey RecupereClePriveeClientKS() throws KeyStoreException, IOException, UnrecoverableKeyException, NoSuchAlgorithmException, CertificateException {
+        // Récupération de la clé privée de Jean-Marc dans le keystore de Jean-Marc
+        KeyStore ks = KeyStore.getInstance("JKS");
+        ks.load(new FileInputStream("JavaServCli(secure)\\KeystoreClient.jks"),"climdp".toCharArray());
+        PrivateKey cle = (PrivateKey) ks.getKey("clientalias","climdp".toCharArray());
+        return cle;
     }
     private static List<Facture> convertBytesToListF(byte[] bytes)
     {
